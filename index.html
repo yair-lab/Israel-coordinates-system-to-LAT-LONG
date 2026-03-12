@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ממיר קואורדינטות - רשת ישראל</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; display: flex; justify-content: center; padding: 20px; background-color: #f4f7f6; }
+        .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { color: #2c3e50; text-align: center; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; text-align: left; }
+        button { width: 100%; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: #e8f4fd; word-break: break-all; font-weight: bold; text-align: center; min-height: 24px; }
+        .label { font-size: 0.9rem; color: #666; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>ממיר קואורדינטות ישראל</h2>
+    <div class="label">הזן קואורדינטות (מופרדות ברווח או פסיק):</div>
+    <input type="text" id="inputCoords" placeholder="לדוגמה: 31.7, 35.2 או 181591, 613328">
+    <button onclick="convert()">המר תוצאה</button>
+    <div id="result"></div>
+</div>
+
+<script>
+    // הגדרת רשת ישראל החדשה (ITM)
+    const itm = "+proj=tmerc +lat_0=31.73439361111111 +lon_0=35.20451694444445 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,47,14,0,0,0,0 +units=m +no_defs";
+    const wgs84 = "EPSG:4326";
+
+    function convert() {
+        const input = document.getElementById('inputCoords').value.trim();
+        const resultDiv = document.getElementById('result');
+        
+        // פיצול הקלט למערך של מספרים
+        const parts = input.split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+
+        if (parts.length < 2) {
+            resultDiv.innerText = "נא להזין שני ערכים תקינים";
+            return;
+        }
+
+        let val1 = parts[0];
+        let val2 = parts[1];
+
+        // זיהוי סוג הקלט
+        // אם הערך הראשון קטן מ-100, זה כנראה LAT/LONG (ישראל בערך ב-31 צפון ו-35 מזרח)
+        if (val1 < 100) {
+            // המרה מ-WGS84 ל-ITM
+            // ב-Proj4 הסדר הוא [Long, Lat]
+            const [east, north] = proj4(wgs84, itm, [val2, val1]);
+            resultDiv.innerText = `${east.toFixed(2)} ${north.toFixed(2)}`;
+        } else {
+            // המרה מ-ITM ל-WGS84
+            const [lon, lat] = proj4(itm, wgs84, [val1, val2]);
+            resultDiv.innerHTML = `LAT: ${lat.toFixed(6)}<br>LONG: ${lon.toFixed(6)}`;
+        }
+    }
+</script>
+
+</body>
+</html>
